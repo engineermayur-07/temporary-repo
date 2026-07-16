@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Three Links — Drama Script</title>
+<style>
+  :root{
+    --panel-bg: rgba(10, 12, 20, 0.72);
+    --accent: #ffce54;
+    --text: #f5f5f5;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: #000;
+    overflow: hidden;
+  }
+
+  /* Background layer - placeholder image, swap src per scene/act */
+  #bg-wrapper {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    background: linear-gradient(160deg, #1b2a3c, #0a0f18);
+  }
+
+  #bg-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.85;
+    transition: opacity 0.6s ease-in-out;
+    display: block;
+  }
+
+  #bg-wrapper::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%);
+  }
+
+  .stage {
+    position: relative;
+    z-index: 2;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 24px;
+  }
+
+  #act-label {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.4);
+    padding: 6px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,206,84,0.4);
+  }
+
+  #dialogue-box {
+    width: min(780px, 92vw);
+    background: var(--panel-bg);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 26px 30px;
+    margin-bottom: 26px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  #speaker-name {
+    color: var(--accent);
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    min-height: 24px;
+  }
+
+  #speaker-name.narrator {
+    color: #9fd6ff;
+  }
+
+  #speaker-name.direction {
+    color: #b8b8b8;
+    font-style: italic;
+  }
+
+  #dialogue-text {
+    color: var(--text);
+    font-size: 22px;
+    line-height: 1.5;
+    min-height: 66px;
+  }
+
+  #dialogue-text.direction-text {
+    font-style: italic;
+    color: #d8d8d8;
+    font-size: 19px;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    background: var(--accent);
+    margin-left: 2px;
+    animation: blink 0.9s step-end infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  #controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: min(780px, 92vw);
+    justify-content: space-between;
+  }
+
+  #progress {
+    color: #cfcfcf;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  #next-btn {
+    background: var(--accent);
+    color: #201800;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 14px rgba(255,206,84,0.35);
+  }
+
+  #next-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255,206,84,0.5);
+  }
+
+  #next-btn:active {
+    transform: translateY(0);
+  }
+
+  #next-btn:disabled {
+    background: #555;
+    color: #aaa;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  #prev-btn {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(255,206,84,0.5);
+    padding: 12px 26px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+
+  #prev-btn:hover {
+    background: rgba(255,206,84,0.12);
+    transform: translateY(-2px);
+  }
+
+  #prev-btn:disabled {
+    color: #777;
+    border-color: #444;
+    cursor: not-allowed;
+    background: transparent;
+    transform: none;
+  }
+
+  #restart-btn {
+    background: transparent;
+    color: #ddd;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 10px 18px;
+    font-size: 13px;
+    border-radius: 30px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+
+  #restart-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  #end-screen {
+    display: none;
+    z-index: 3;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    color: var(--accent);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  #end-screen h1 {
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+
+  #end-screen p {
+    color: #eee;
+    font-size: 18px;
+    max-width: 600px;
+  }
+
+  @media (max-width: 600px) {
+    #dialogue-text { font-size: 18px; }
+    #speaker-name { font-size: 17px; }
+    #next-btn { padding: 10px 22px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bg-wrapper">
+  <!-- PLACEHOLDER IMAGE: replace src with your own background image per scene -->
+  <img id="bg-image" src="img1.png" alt="scene background">
+</div>
+
+<div class="stage">
+  <div id="act-label">Act 1 — The Island</div>
+
+  <div id="dialogue-box">
+    <div id="speaker-name"></div>
+    <div id="dialogue-text"><span id="typed-text"></span><span class="cursor" id="cursor-blink">|</span></div>
+  </div>
+
+  <div id="controls">
+    <button id="prev-btn" onclick="prevLine()" disabled>◀ Prev</button>
+    <div id="progress">Line 1 / 1</div>
+    <button id="restart-btn" onclick="restartPlay()">Restart</button>
+    <button id="next-btn" onclick="nextLine()">Next ▶</button>
+  </div>
+</div>
+
+<div id="end-screen">
+  <h1>THE END</h1>
+  <p>"Stay calm, work together and never lose hope!"</p>
+  <button id="restart-btn-2" class="" onclick="restartPlay()" style="margin-top:24px; background: var(--accent); color:#201800; border:none; padding:12px 30px; border-radius:30px; font-weight:bold; cursor:pointer; letter-spacing:1px;">Play Again</button>
+</div>
+
+<script>
+/* =========================================================
+   SCRIPT DATA
+   Each entry: { speaker, text, type, act, bg }
+   type: "narrator" | "character" | "direction" | "sfx"
+   bg: placeholder background key -- change the img src
+       manually per act/scene as noted in comments below.
+   ========================================================= */
+
+const script = [
+  // ACT 1 — THE ISLAND
+  { act: "Act 1 — The Island", type: "sfx", speaker: "Stage", text: "Sound of waves. Seven survivors are lying on the stage." },
+  { act: "Act 1 — The Island", type: "narrator", speaker: "Narrator 1", text: "Ten people boarded a plane, expecting a normal journey." },
+  { act: "Act 1 — The Island", type: "narrator", speaker: "Narrator 2", text: "But after a terrible accident, only seven friends woke up on an unknown island." },
+  { act: "Act 1 — The Island", type: "narrator", speaker: "Narrator 1", text: "They had no food supply, no shelter and no way to contact anyone." },
+  { act: "Act 1 — The Island", type: "direction", speaker: "Stage", text: "Rohit wakes up and looks around." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Rohit (panicking)", text: "Where is the plane? Are we the only people here?" },
+  { act: "Act 1 — The Island", type: "character", speaker: "Dhanashree (calming him)", text: "Rohit, breathe. We are alive, and we are together." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Arjun", text: "Everyone, check for injuries. Is everyone safe?" },
+  { act: "Act 1 — The Island", type: "character", speaker: "Ishwari (counting)", text: "All seven of us are here." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Vaidehi", text: "Our bags and phones are gone. How will we survive?" },
+  { act: "Act 1 — The Island", type: "character", speaker: "Chaitali", text: "We will survive together. Nobody should go anywhere alone." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Sahyadri", text: "The sun will set soon. We need water and shelter." },
+  { act: "Act 1 — The Island", type: "narrator", speaker: "Narrator 2", text: "While searching near the shore, they found three important objects." },
+  { act: "Act 1 — The Island", type: "direction", speaker: "Stage", text: "Arjun picks up the items." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Arjun", text: "Look! We have a knife, a rope and a map." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Rohit (opening the map)", text: "The map shows a stream beyond the coconut trees." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Dhanashree", text: "The rope can help us tie branches and build shelter." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Sahyadri", text: "The knife can help us collect coconuts and cut materials." },
+  { act: "Act 1 — The Island", type: "character", speaker: "Ishwari", text: "Then these three things will help us survive. Let us move together." },
+  { act: "Act 1 — The Island", type: "narrator", speaker: "Narrator 1", text: "With little time before sunset, the seven friends entered the forest." },
+
+  // ACT 2 — FINDING WATER
+  { act: "Act 2 — Finding Water", type: "sfx", speaker: "Stage", text: "Forest sounds. Rohit and Ishwari study the map." },
+  { act: "Act 2 — Finding Water", type: "narrator", speaker: "Narrator 2", text: "The forest was hot, thick and difficult to cross." },
+  { act: "Act 2 — Finding Water", type: "narrator", speaker: "Narrator 1", text: "They followed the map and marked their path with stones so they would not become lost." },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Rohit", text: "The stream should be towards the left." },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Arjun", text: "That path is difficult, but the easier path may take us in the wrong direction." },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Sahyadri", text: "Do not argue. Listen carefully." },
+  { act: "Act 2 — Finding Water", type: "sfx", speaker: "Stage", text: "Sound of running water." },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Vaidehi", text: "I can hear water!" },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Chaitali", text: "Stay together. Do not run." },
+  { act: "Act 2 — Finding Water", type: "narrator", speaker: "Narrator 2", text: "The sound became louder as they moved through the trees." },
+  { act: "Act 2 — Finding Water", type: "direction", speaker: "Stage", text: "They move forward." },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Ishwari", text: "We found the stream!" },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Dhanashree", text: "There is higher ground nearby. We can build our shelter there." },
+  { act: "Act 2 — Finding Water", type: "character", speaker: "Arjun", text: "Let us collect fallen branches and leaves before it becomes dark." },
+  { act: "Act 2 — Finding Water", type: "narrator", speaker: "Narrator 1", text: "The map had guided them to fresh water and a safer place." },
+
+  // ACT 3 — THE SHELTER
+  { act: "Act 3 — The Shelter", type: "direction", speaker: "Stage", text: "Everyone carries imaginary branches and leaves." },
+  { act: "Act 3 — The Shelter", type: "narrator", speaker: "Narrator 2", text: "Now the group had water, but darkness was approaching quickly." },
+  { act: "Act 3 — The Shelter", type: "narrator", speaker: "Narrator 1", text: "They divided the work and began building a shelter on higher ground." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Arjun", text: "Sahyadri, hold these branches together." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Sahyadri", text: "Dhanashree, tie them using the rope." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Dhanashree", text: "Chaitali, pull the rope from your side." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Chaitali", text: "Done. The frame is becoming strong." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Rohit", text: "I found fallen coconuts for food." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Vaidehi", text: "I collected large leaves for the roof." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Ishwari", text: "Place the leaves carefully. Rain may come tonight." },
+  { act: "Act 3 — The Shelter", type: "narrator", speaker: "Narrator 2", text: "Just as the shelter was completed, dark clouds covered the sky." },
+  { act: "Act 3 — The Shelter", type: "sfx", speaker: "Stage", text: "Sound of thunder and rain. Everyone enters the shelter." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Vaidehi", text: "The shelter is shaking!" },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Arjun", text: "Hold the central branches. Do not panic." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Dhanashree", text: "The rope is holding everything together." },
+  { act: "Act 3 — The Shelter", type: "character", speaker: "Rohit", text: "Our shelter survived because everyone worked as a team." },
+  { act: "Act 3 — The Shelter", type: "narrator", speaker: "Narrator 1", text: "The storm was strong, but their shelter remained standing." },
+
+  // ACT 4 — THE RESCUE
+  { act: "Act 4 — The Rescue", type: "direction", speaker: "Stage", text: "Morning light. Everyone comes out of the shelter." },
+  { act: "Act 4 — The Rescue", type: "narrator", speaker: "Narrator 2", text: "The next morning, the group was tired but safe." },
+  { act: "Act 4 — The Rescue", type: "narrator", speaker: "Narrator 1", text: "They had found water, collected food and survived the storm." },
+  { act: "Act 4 — The Rescue", type: "narrator", speaker: "Narrator 2", text: "But they still needed a way to attract rescuers." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Sahyadri", text: "We should make a large SOS sign on the beach." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Ishwari", text: "We can use stones, branches and coconut leaves." },
+  { act: "Act 4 — The Rescue", type: "direction", speaker: "Stage", text: "Everyone pretends to arrange the sign." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Chaitali", text: "Make the letters large so they can be seen from far away." },
+  { act: "Act 4 — The Rescue", type: "narrator", speaker: "Narrator 1", text: "They worked together once again and completed the rescue signal." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Vaidehi (pointing towards the sea)", text: "Look! I can see a boat!" },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Rohit", text: "Everyone, stand near the SOS sign and wave!" },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "All", text: "Help! We are here!" },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Dhanashree", text: "The boat is coming towards us!" },
+  { act: "Act 4 — The Rescue", type: "narrator", speaker: "Narrator 2", text: "The people on the boat noticed the SOS sign and changed direction." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Arjun", text: "The map gave us direction." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Rohit", text: "The knife helped us collect food and materials." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Dhanashree", text: "The rope protected our shelter." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "Ishwari", text: "But teamwork was our strongest survival tool." },
+  { act: "Act 4 — The Rescue", type: "narrator", speaker: "Narrator 1", text: "The seven friends were finally rescued from the island." },
+  { act: "Act 4 — The Rescue", type: "narrator", speaker: "Narrator 2", text: "They survived because they stayed calm, planned wisely and trusted one another." },
+  { act: "Act 4 — The Rescue", type: "character", speaker: "All Together", text: "\u201CStay calm, work together and never lose hope!\u201D" },
+];
+
+/* =========================================================
+   PLACEHOLDER BACKGROUND IMAGES PER ACT
+   Replace these URLs / paths with your own images.
+   e.g. "images/act1.jpg", "images/act2.jpg", etc.
+   ========================================================= */
+/* =========================================================
+   PLACEHOLDER BACKGROUND IMAGES — 15 total
+   Each breakpoint below marks the line INDEX (0-based, matches
+   the order of the "script" array above) at which a new
+   background image should appear. The background stays the
+   same until the next breakpoint is reached.
+   Replace img1.png ... img15.png with your own image files
+   (keep them in the same folder as this HTML file, or update
+   the paths to point wherever your images live).
+   ========================================================= */
+const backgroundPoints = [
+  { index: 0,  img: "img1.png"  }, // Waves, survivors on the island
+  { index: 4,  img: "img2.png"  }, // Rohit wakes up, panicking
+  { index: 9,  img: "img3.png"  }, // Group takes stock of the situation
+  { index: 13, img: "img4.png"  }, // Knife, rope and map are found
+  { index: 20, img: "img5.png"  }, // Entering the forest
+  { index: 24, img: "img6.png"  }, // Choosing a path through the forest
+  { index: 27, img: "img7.png"  }, // Sound of running water
+  { index: 31, img: "img8.png"  }, // The stream is found
+  { index: 35, img: "img9.png"  }, // Higher ground / safer place
+  { index: 39, img: "img10.png" }, // Building the shelter
+  { index: 46, img: "img11.png" }, // Dark storm clouds gather
+  { index: 48, img: "img12.png" }, // Storm hits, shelter shaking
+  { index: 52, img: "img13.png" }, // Morning after the storm
+  { index: 57, img: "img14.png" }, // Building the SOS sign
+  { index: 64, img: "img15.png" }, // Boat spotted / rescue
+];
+
+function getBackgroundForIndex(idx) {
+  let current = backgroundPoints[0].img;
+  for (const point of backgroundPoints) {
+    if (idx >= point.index) {
+      current = point.img;
+    } else {
+      break;
+    }
+  }
+  return current;
+}
+
+let currentIndex = 0;
+let isTyping = false;
+let typeTimer = null;
+
+const speakerEl = document.getElementById('speaker-name');
+const typedTextEl = document.getElementById('typed-text');
+const cursorEl = document.getElementById('cursor-blink');
+const nextBtn = document.getElementById('next-btn');
+const prevBtn = document.getElementById('prev-btn');
+const progressEl = document.getElementById('progress');
+const actLabelEl = document.getElementById('act-label');
+const bgImageEl = document.getElementById('bg-image');
+const endScreen = document.getElementById('end-screen');
+
+function typeWriter(text, callback) {
+  isTyping = true;
+  typedTextEl.textContent = '';
+  let i = 0;
+  clearInterval(typeTimer);
+  typeTimer = setInterval(() => {
+    if (i < text.length) {
+      typedTextEl.textContent += text.charAt(i);
+      i++;
+    } else {
+      clearInterval(typeTimer);
+      isTyping = false;
+      if (callback) callback();
+    }
+  }, 32);
+}
+
+function renderLine(index) {
+  const entry = script[index];
+
+  // Update background per scene breakpoint (placeholder image swap)
+  actLabelEl.textContent = entry.act;
+  const bgSrc = getBackgroundForIndex(index);
+  if (bgImageEl.getAttribute('src') !== bgSrc) {
+    bgImageEl.style.opacity = 0;
+    setTimeout(() => {
+      bgImageEl.src = bgSrc;
+      bgImageEl.style.opacity = 0.85;
+    }, 250);
+  }
+
+  // Speaker styling
+  speakerEl.className = '';
+  typedTextEl.parentElement.className = '';
+  if (entry.type === 'narrator') {
+    speakerEl.classList.add('narrator');
+    speakerEl.textContent = entry.speaker;
+  } else if (entry.type === 'direction' || entry.type === 'sfx') {
+    speakerEl.classList.add('direction');
+    speakerEl.textContent = '[ Stage Direction ]';
+    typedTextEl.parentElement.classList.add('direction-text');
+  } else {
+    speakerEl.textContent = entry.speaker;
+  }
+
+  progressEl.textContent = `Line ${index + 1} / ${script.length}`;
+
+  prevBtn.disabled = (index === 0);
+  nextBtn.textContent = (index === script.length - 1) ? 'Finish ▶' : 'Next ▶';
+
+  const displayText = (entry.type === 'direction' || entry.type === 'sfx')
+    ? `[${entry.text}]`
+    : entry.text;
+
+  typeWriter(displayText);
+}
+
+function prevLine() {
+  if (currentIndex === 0) return;
+  clearInterval(typeTimer);
+  isTyping = false;
+  currentIndex--;
+  renderLine(currentIndex);
+}
+
+function nextLine() {
+  if (isTyping) {
+    // Skip to end of current typing
+    clearInterval(typeTimer);
+    const entry = script[currentIndex];
+    const displayText = (entry.type === 'direction' || entry.type === 'sfx')
+      ? `[${entry.text}]`
+      : entry.text;
+    typedTextEl.textContent = displayText;
+    isTyping = false;
+    return;
+  }
+
+  if (currentIndex < script.length - 1) {
+    currentIndex++;
+    renderLine(currentIndex);
+  } else {
+    showEndScreen();
+  }
+}
+
+function showEndScreen() {
+  document.querySelector('.stage').style.display = 'none';
+  endScreen.style.display = 'flex';
+}
+
+function restartPlay() {
+  currentIndex = 0;
+  nextBtn.textContent = 'Next ▶';
+  prevBtn.disabled = true;
+  document.querySelector('.stage').style.display = 'flex';
+  endScreen.style.display = 'none';
+  renderLine(currentIndex);
+}
+
+// Initialize
+renderLine(currentIndex);
+</script>
+
+</body>
+</html>
